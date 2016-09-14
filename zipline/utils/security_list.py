@@ -16,7 +16,7 @@ SECURITY_LISTS_DIR = os.path.join(zipline_dir, 'resources', 'security_lists')
 
 class SecurityList(object):
 
-    def __init__(self, data, current_date_func, asset_finder):
+    def __init__(self, data, asset_finder):
         """
         data: a nested dictionary:
             knowledge_date -> lookup_date ->
@@ -27,7 +27,6 @@ class SecurityList(object):
         self.data = data
         self._cache = {}
         self._knowledge_dates = self.make_knowledge_dates(self.data)
-        self.current_date = current_date_func
         self.count = 0
         self._current_set = set()
         self.asset_finder = asset_finder
@@ -37,18 +36,12 @@ class SecurityList(object):
             [pd.Timestamp(k) for k in data.keys()])
         return knowledge_dates
 
-    def __iter__(self):
-        return iter(self.restricted_list)
+    def is_restricted(self, sid, dt):
+        return sid in self.restricted_list(dt)
 
-    def __contains__(self, item):
-        return item in self.restricted_list
-
-    @property
-    def restricted_list(self):
-
-        cd = self.current_date()
+    def restricted_list(self, dt):
         for kd in self._knowledge_dates:
-            if cd < kd:
+            if dt < kd:
                 break
             if kd in self._cache:
                 self._current_set = self._cache[kd]
@@ -88,8 +81,7 @@ class SecurityListSet(object):
     # list implementations.
     security_list_type = SecurityList
 
-    def __init__(self, current_date_func, asset_finder):
-        self.current_date_func = current_date_func
+    def __init__(self, asset_finder):
         self.asset_finder = asset_finder
         self._leveraged_etf = None
 
@@ -98,7 +90,6 @@ class SecurityListSet(object):
         if self._leveraged_etf is None:
             self._leveraged_etf = self.security_list_type(
                 load_from_directory('leveraged_etf_list'),
-                self.current_date_func,
                 asset_finder=self.asset_finder
             )
         return self._leveraged_etf

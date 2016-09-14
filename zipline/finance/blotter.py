@@ -305,7 +305,7 @@ class Blotter(object):
 
             for sid, asset_orders in iteritems(self.open_orders):
                 asset = asset_dict[sid]
-
+                # import pdb; pdb.set_trace()
                 for order, txn in \
                         self.slippage_func(bar_data, asset, asset_orders):
                     additional_commission = \
